@@ -1012,7 +1012,7 @@ class EmbeddingCompletionRequest(OpenAIBaseModel):
 
 class EmbeddingChatRequest(OpenAIBaseModel):
     model: Optional[str] = None
-    messages: list[ChatCompletionMessageParam]
+    messages: list[list[ChatCompletionMessageParam]]
 
     encoding_format: Literal["float", "base64"] = "float"
     dimensions: Optional[int] = None

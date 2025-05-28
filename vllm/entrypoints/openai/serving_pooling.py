@@ -109,24 +109,29 @@ class OpenAIServingPooling(OpenAIServing):
                                           "for pooling models")
 
             if isinstance(request, PoolingChatRequest):
-                (
-                    _,
-                    request_prompts,
-                    engine_prompts,
-                ) = await self._preprocess_chat(
-                    request,
-                    tokenizer,
-                    request.messages,
-                    chat_template=request.chat_template or self.chat_template,
-                    chat_template_content_format=self.
-                    chat_template_content_format,
-                    # In pooling requests, we are not generating tokens,
-                    # so there is no need to append extra tokens to the input
-                    add_generation_prompt=False,
-                    continue_final_message=False,
-                    truncate_prompt_tokens=truncate_prompt_tokens,
-                    add_special_tokens=request.add_special_tokens,
-                )
+                request_prompts = []
+                engine_prompts = []
+                for chat in request.messages:
+                    (
+                        _,
+                        request_prompt,
+                        engine_prompt,
+                    ) = await self._preprocess_chat(
+                        request,
+                        tokenizer,
+                        chat,
+                        chat_template=request.chat_template or self.chat_template,
+                        chat_template_content_format=self.
+                        chat_template_content_format,
+                        # In pooling requests, we are not generating tokens,
+                        # so there is no need to append extra tokens to the input
+                        add_generation_prompt=False,
+                        continue_final_message=False,
+                        truncate_prompt_tokens=truncate_prompt_tokens,
+                        add_special_tokens=request.add_special_tokens,
+                    )
+                    request_prompts.extend(request_prompt)
+                    engine_prompts.extend(engine_prompt)
             else:
                 (request_prompts,
                  engine_prompts) = await self._preprocess_completion(
