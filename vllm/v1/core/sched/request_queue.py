@@ -146,25 +146,30 @@ class PriorityRequestQueue(RequestQueue):
     """
 
     def __init__(self) -> None:
-        self._heap: list[tuple[int, float, Request]] = []
+        self._heap: list[tuple[int, float, int, Request]] = []
 
     def add_request(self, request: Request) -> None:
         """Add a request to the queue according to priority policy."""
+        child_idx = (
+            -1
+            if "_" not in request.request_id
+            else int(request.request_id.split("_")[0])
+        )
         heapq.heappush(self._heap,
-                       (request.priority, request.arrival_time, request))
+                       (request.priority, request.arrival_time, child_idx, request))
 
     def pop_request(self) -> Request:
         """Pop a request from the queue according to priority policy."""
         if not self._heap:
             raise IndexError("pop from empty heap")
-        _, _, request = heapq.heappop(self._heap)
+        _, _, _, request = heapq.heappop(self._heap)
         return request
 
     def peek_request(self) -> Request:
         """Peek at the next request in the queue without removing it."""
         if not self._heap:
             raise IndexError("peek from empty heap")
-        _, _, request = self._heap[0]
+        _, _, _, request = self._heap[0]
         return request
 
     def prepend_request(self, request: Request) -> None:
@@ -184,13 +189,13 @@ class PriorityRequestQueue(RequestQueue):
 
     def remove_request(self, request: Request) -> None:
         """Remove a specific request from the queue."""
-        self._heap = [(p, t, r) for p, t, r in self._heap if r != request]
+        self._heap = [(p, t, c, r) for p, t, c, r in self._heap if r != request]
         heapq.heapify(self._heap)
 
     def remove_requests(self, requests: Iterable[Request]) -> None:
         """Remove multiple specific requests from the queue."""
         requests_to_remove = set(requests)
-        self._heap = [(p, t, r) for p, t, r in self._heap
+        self._heap = [(p, t, c, r) for p, t, c, r in self._heap
                       if r not in requests_to_remove]
         heapq.heapify(self._heap)
 
@@ -206,7 +211,7 @@ class PriorityRequestQueue(RequestQueue):
         """Iterate over the queue according to priority policy."""
         heap_copy = self._heap[:]
         while heap_copy:
-            _, _, request = heapq.heappop(heap_copy)
+            _, _, _, request = heapq.heappop(heap_copy)
             yield request
 
     def __reversed__(self) -> Iterator[Request]:
