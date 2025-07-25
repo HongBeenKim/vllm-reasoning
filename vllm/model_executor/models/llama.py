@@ -89,10 +89,19 @@ class LlamaMLP(nn.Module):
                              "Only silu is supported for now.")
         self.act_fn = SiluAndMul()
 
+        self.event_begin = torch.Event(enable_timing=True)
+        self.event_end = torch.Event(enable_timing=True)
+    
+    def get_latency(self) -> float:
+        self.event_end.synchronize()
+        return self.event_begin.elapsed_time(self.event_end)
+
     def forward(self, x):
+        self.event_begin.record()
         x, _ = self.gate_up_proj(x)
         x = self.act_fn(x)
         x, _ = self.down_proj(x)
+        self.event_end.record()
         return x
 
 
@@ -390,6 +399,9 @@ class LlamaModel(nn.Module):
             if idx in self.aux_hidden_state_layers:
                 aux_hidden_states.append(hidden_states + residual)
             hidden_states, residual = layer(positions, hidden_states, residual)
+        
+        t = self.layers[14].mlp.get_latency()
+        print(f"bs{hidden_states.shape[0]},{t}")
 
         if not get_pp_group().is_last_rank:
             return IntermediateTensors({

@@ -3,13 +3,17 @@
 
 from vllm import LLM, EngineArgs
 from vllm.utils import FlexibleArgumentParser
+from vllm.inputs.data import TokensPrompt
 
 
 def create_parser():
     parser = FlexibleArgumentParser()
     # Add engine args
     EngineArgs.add_cli_args(parser)
-    parser.set_defaults(model="meta-llama/Llama-3.2-1B-Instruct")
+    parser.set_defaults(
+        model="meta-llama/Llama-3.2-1B-Instruct", 
+        enable_prefix_caching=False,
+    )
     # Add sampling params
     sampling_group = parser.add_argument_group("Sampling parameters")
     sampling_group.add_argument("--max-tokens", type=int)
@@ -43,20 +47,12 @@ def main(args: dict):
 
     # Generate texts from the prompts. The output is a list of RequestOutput
     # objects that contain the prompt, generated text, and other information.
-    prompts = [
-        "Hello, my name is",
-        "The president of the United States is",
-        "The capital of France is",
-        "The future of AI is",
-    ]
-    outputs = llm.generate(prompts, sampling_params)
-    # Print the outputs.
-    print("-" * 50)
-    for output in outputs:
-        prompt = output.prompt
-        generated_text = output.outputs[0].text
-        print(f"Prompt: {prompt!r}\nGenerated text: {generated_text!r}")
-        print("-" * 50)
+    for bs in range(32, 4097, 32):
+        print(f"Batch Size {bs}")
+        prompts = TokensPrompt(
+            prompt_token_ids=[0 for _ in range(bs)],
+        )
+        outputs = llm.generate(prompts, sampling_params)
 
 
 if __name__ == "__main__":
