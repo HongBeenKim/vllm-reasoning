@@ -400,9 +400,6 @@ class LlamaModel(nn.Module):
                 aux_hidden_states.append(hidden_states + residual)
             hidden_states, residual = layer(positions, hidden_states, residual)
         
-        t = self.layers[14].mlp.get_latency()
-        print(f"bs{hidden_states.shape[0]},{t}")
-
         if not get_pp_group().is_last_rank:
             return IntermediateTensors({
                 "hidden_states": hidden_states,

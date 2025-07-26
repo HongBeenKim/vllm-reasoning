@@ -1436,6 +1436,9 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         # compiled with full CUDA graphs, we have to skip them entirely.
         skip_cuda_graphs = self.full_cuda_graph and not attention_cuda_graphs
 
+        event_begin = torch.Event(enable_timing=True)
+        event_end = torch.Event(enable_timing=True)
+
         # Run the model.
         # Use persistent buffers for CUDA graphs.
         with set_forward_context(
@@ -1447,6 +1450,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         ):
             self.maybe_setup_kv_connector(scheduler_output)
 
+            event_begin.record()
             model_output = self.model(
                 input_ids=input_ids,
                 positions=positions,
@@ -1457,6 +1461,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
                     device=self.device,
                 ),
             )
+            event_end.record()
 
             self.maybe_wait_for_kv_save()
             finished_sending, finished_recving = (
@@ -1567,6 +1572,12 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         logprobs_tensors = sampler_output.logprobs_tensors
         logprobs_lists = logprobs_tensors.tolists() \
             if logprobs_tensors is not None else None
+        
+        event_end.synchronize()
+        elapsed = event_begin.elapsed_time(event_end)
+        rank = torch.distributed.get_rank()
+        with open(f"../model-latency-{rank}.csv", 'a') as f:
+            f.write(f"{input_ids.shape[0]},{elapsed}\n")
 
         # Compute prompt logprobs if needed.
         prompt_logprobs_dict = self._get_prompt_logprobs_dict(
