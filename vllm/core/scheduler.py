@@ -142,6 +142,8 @@ class SchedulerOutputs:
     num_prefill_groups: int
     # Total number of batched tokens.
     num_batched_tokens: int
+    # Total number of cached tokens
+    num_cached_tokens: int
     # Blocks to swap in. List of CPU -> GPU block number.
     blocks_to_swap_in: List[Tuple[int, int]]
     # Blocks to swap out. List of GPU -> CPU block number.
@@ -1466,6 +1468,7 @@ class Scheduler:
             num_prefill_groups=num_prefill_groups,
             num_batched_tokens=budget.num_batched_tokens +
             budget.num_cached_tokens,
+            num_cached_tokens=budget.num_cached_tokens,
             blocks_to_swap_in=swapped_in.blocks_to_swap_in,
             blocks_to_swap_out=running_scheduled.blocks_to_swap_out,
             blocks_to_copy=running_scheduled.blocks_to_copy +

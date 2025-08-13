@@ -398,6 +398,9 @@ class LLMEngine:
         # Don't keep the dummy data in memory
         self.reset_mm_cache()
 
+        # A file to log num. batched tokens
+        self.log_bs_file = open("./num-batched-tokens.csv", 'w')
+
     def _initialize_kv_caches(self) -> None:
         """Initialize the KV cache in the worker(s).
 
@@ -511,6 +514,7 @@ class LLMEngine:
         # Use getattr since __init__ can fail before the field is set
         if model_executor := getattr(self, "model_executor", None):
             model_executor.shutdown()
+        self.log_bs_file.close()
 
     def get_tokenizer_group(self) -> TokenizerGroup:
         if self.tokenizer is None:
@@ -1306,6 +1310,13 @@ class LLMEngine:
         assert scheduler_outputs is not None
 
         if not scheduler_outputs.is_empty():
+            num_newly_scheduled_tokens = (
+                scheduler_outputs.num_batched_tokens - 
+                scheduler_outputs.num_cached_tokens
+            )
+            self.log_bs_file.write(
+                f"{time.time()},{num_newly_scheduled_tokens}\n"
+            )
 
             # Check if we have a cached last_output from the previous iteration.
             # For supporting PP this is probably the best way to pass the
