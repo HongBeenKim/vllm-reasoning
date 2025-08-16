@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+import debugpy
 import asyncio
 import atexit
 import gc
@@ -1807,6 +1808,10 @@ async def run_server_worker(listen_address,
     log_config = load_log_config(args.log_config_file)
     if log_config is not None:
         uvicorn_kwargs['log_config'] = log_config
+
+    # debugpy.listen(("0.0.0.0", 5678))
+    # print("Waiting for debugger attach...")
+    # debugpy.wait_for_client()
 
     async with build_async_engine_client(args, client_config) as engine_client:
         maybe_register_tokenizer_info_endpoint(args)

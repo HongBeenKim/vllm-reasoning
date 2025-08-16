@@ -7,6 +7,7 @@ import time
 from collections.abc import AsyncGenerator, AsyncIterator
 from collections.abc import Sequence as GenericSequence
 from typing import Callable, Final, Optional, Union
+from dataclasses import asdict
 
 import jinja2
 import partial_json_parser
@@ -1144,6 +1145,7 @@ class OpenAIServingChat(OpenAIServing):
             model=model_name,
             choices=choices,
             usage=usage,
+            metrics=asdict(final_res.metrics),
             prompt_logprobs=clamp_prompt_logprobs(final_res.prompt_logprobs),
             kv_transfer_params=final_res.kv_transfer_params,
         )

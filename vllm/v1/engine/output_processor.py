@@ -8,6 +8,7 @@ from typing import Any, Optional, Union, cast
 
 import torch
 
+from vllm.sequence import RequestMetrics
 from vllm.outputs import (CompletionOutput, PoolingOutput,
                           PoolingRequestOutput, RequestOutput)
 from vllm.sampling_params import RequestOutputKind
@@ -220,6 +221,14 @@ class RequestState:
             prompt_logprobs = self.logprobs_processor.pop_prompt_logprobs()
         else:
             prompt_logprobs = self.logprobs_processor.prompt_logprobs
+        
+        metrics = RequestMetrics(
+            arrival_time=self.stats.arrival_time,
+            last_token_time=self.stats.last_token_ts,
+            first_scheduled_time=self.stats.scheduled_ts,
+            first_token_time=self.stats.first_token_ts,
+            time_in_queue=self.stats.scheduled_ts - self.stats.arrival_time,
+        )
 
         return RequestOutput(
             request_id=request_id,
@@ -228,6 +237,7 @@ class RequestState:
             prompt_logprobs=prompt_logprobs,
             outputs=cast(list[CompletionOutput], outputs),
             finished=finished,
+            metrics=metrics,
             kv_transfer_params=kv_transfer_params,
             num_cached_tokens=num_cached_tokens,
         )

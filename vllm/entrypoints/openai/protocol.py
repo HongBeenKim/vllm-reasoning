@@ -1631,6 +1631,7 @@ class ChatCompletionResponse(OpenAIBaseModel):
                                    "priority"]] = None
     system_fingerprint: Optional[str] = None
     usage: UsageInfo
+    metrics: Optional[dict]
 
     # vLLM-specific fields that are not in OpenAI spec
     prompt_logprobs: Optional[list[Optional[dict[int, Logprob]]]] = None
