@@ -330,7 +330,7 @@ class PrometheusStatLogger(StatLoggerBase):
             name="vllm:iteration_tokens_total",
             documentation="Histogram of number of tokens per engine_step.",
             buckets=[
-                1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384
+                32, 64, 96, 128, 160, 192, 224, 256
             ],
             labelnames=labelnames)
         self.histogram_iteration_tokens = make_per_engine(
@@ -527,8 +527,7 @@ class PrometheusStatLogger(StatLoggerBase):
         self.counter_generation_tokens[engine_idx].inc(
             iteration_stats.num_generation_tokens)
         self.histogram_iteration_tokens[engine_idx].observe(
-            iteration_stats.num_prompt_tokens + \
-            iteration_stats.num_generation_tokens)
+            iteration_stats.num_scheduled_tokens)
 
         for max_gen_tokens in iteration_stats.max_num_generation_tokens_iter:
             self.histogram_max_num_generation_tokens_request[

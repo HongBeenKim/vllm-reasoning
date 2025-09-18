@@ -275,7 +275,7 @@ class EngineCore:
                                   self.scheduler.make_stats())
             raise err
 
-    def step(self) -> tuple[dict[int, EngineCoreOutputs], bool]:
+    def step(self) -> tuple[dict[int, EngineCoreOutputs], int]:
         """Schedule, execute, and make output.
 
         Returns tuple of outputs and a flag indicating whether the model
@@ -297,7 +297,7 @@ class EngineCore:
             scheduler_output, model_output)  # type: ignore
 
         return (engine_core_outputs,
-                scheduler_output.total_num_scheduled_tokens > 0)
+                scheduler_output.total_num_scheduled_tokens)
 
     def step_with_batch_queue(
             self) -> tuple[Optional[dict[int, EngineCoreOutputs]], bool]:
@@ -748,12 +748,14 @@ class EngineCoreProc(EngineCore):
         """Called only when there are unfinished local requests."""
 
         # Step the engine core.
-        outputs, model_executed = self.step_fn()
+        outputs, num_scheduled_tokens = self.step_fn()
         # Put EngineCoreOutputs into the output queue.
         for output in (outputs.items() if outputs else ()):
+            output[1].scheduler_stats.num_scheduled_tokens = (
+                num_scheduled_tokens)
             self.output_queue.put_nowait(output)
 
-        return model_executed
+        return num_scheduled_tokens > 0
 
     def _handle_client_request(self, request_type: EngineCoreRequestType,
                                request: Any) -> None:

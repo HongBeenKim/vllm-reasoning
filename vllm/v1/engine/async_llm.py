@@ -391,6 +391,10 @@ class AsyncLLM(EngineClient):
 
                     iteration_stats = IterationStats() if (
                         log_stats and num_outputs) else None
+                    
+                    iteration_stats.update_num_scheduled_tokens(
+                        outputs.scheduler_stats.num_scheduled_tokens
+                    )
 
                     # Split outputs into chunks of at most
                     # VLLM_V1_OUTPUT_PROC_CHUNK_SIZE, so that we don't block the

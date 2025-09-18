@@ -46,6 +46,8 @@ class SchedulerStats:
 
     num_corrupted_reqs: int = 0
 
+    num_scheduled_tokens: int = 0
+
 
 @dataclass
 class LoRAStats:
@@ -91,6 +93,7 @@ class IterationStats:
         self.iteration_timestamp = time.time()
         self.num_generation_tokens = 0
         self.num_prompt_tokens = 0
+        self.num_scheduled_tokens = 0
         self.num_preempted_reqs = 0
         self.finished_requests: list[FinishedRequestStats] = []
         self.max_num_generation_tokens_iter: list[int] = []
@@ -103,6 +106,9 @@ class IterationStats:
     def _time_since(self, start: float) -> float:
         """Calculate an interval relative to this iteration's timestamp."""
         return self.iteration_timestamp - start
+    
+    def update_num_scheduled_tokens(self, num_scheduled_tokens: int):
+        self.num_scheduled_tokens = num_scheduled_tokens
 
     def update_from_output(self, output: "EngineCoreOutput",
                            engine_core_timestamp: float, is_prefilling: bool,
