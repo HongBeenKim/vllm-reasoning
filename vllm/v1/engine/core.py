@@ -142,8 +142,6 @@ class EngineCore:
                         self.batch_queue_size)
             self.batch_queue = queue.Queue(self.batch_queue_size)
         
-        self.log_bs_file = open("./num-batched-tokens.csv", 'w')
-
         self.request_block_hasher: Optional[Callable[[Request],
                                                      list[BlockHash]]] = None
         if (self.vllm_config.cache_config.enable_prefix_caching
@@ -287,9 +285,6 @@ class EngineCore:
         if not self.scheduler.has_requests():
             return {}, False
         scheduler_output = self.scheduler.schedule()
-        self.log_bs_file.write(
-            f"{time.time()},{scheduler_output.total_num_scheduled_tokens}\n"
-        )
         model_output = self.execute_model_with_error_logging(
             self.model_executor.execute_model,  # type: ignore
             scheduler_output)
@@ -356,7 +351,6 @@ class EngineCore:
             self.model_executor.shutdown()
         if self.scheduler:
             self.scheduler.shutdown()
-        self.log_bs_file.close() 
 
     def profile(self, is_start: bool = True):
         self.model_executor.profile(is_start)
