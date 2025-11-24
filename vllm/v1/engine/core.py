@@ -5,6 +5,7 @@ import queue
 import signal
 import threading
 import time
+import datetime
 from collections import deque
 from collections.abc import Generator
 from concurrent.futures import Future
@@ -154,6 +155,9 @@ class EngineCore:
 
             self.request_block_hasher = get_request_block_hasher(
                 block_size, caching_hash_fn)
+        
+        now = datetime.datetime.now().isoformat()
+        self.nbt_log_file = open(f"vllm-nbt-{now}.csv", 'w')
 
     def _initialize_kv_caches(
             self, vllm_config: VllmConfig) -> tuple[int, int, KVCacheConfig]:
@@ -285,11 +289,16 @@ class EngineCore:
         if not self.scheduler.has_requests():
             return {}, False
         scheduler_output = self.scheduler.schedule()
+        begin = time.time()
         model_output = self.execute_model_with_error_logging(
             self.model_executor.execute_model,  # type: ignore
             scheduler_output)
+        end = time.time()
         engine_core_outputs = self.scheduler.update_from_output(
             scheduler_output, model_output)  # type: ignore
+        
+        self.nbt_log_file.write(
+            f"{begin},{end},{scheduler_output.total_num_scheduled_tokens}\n")
 
         return (engine_core_outputs,
                 scheduler_output.total_num_scheduled_tokens)
