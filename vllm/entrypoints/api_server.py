@@ -10,6 +10,7 @@ change `vllm/entrypoints/openai/api_server.py` instead.
 import asyncio
 import json
 import ssl
+import time
 from argparse import Namespace
 from collections.abc import AsyncGenerator
 from typing import Any, Optional
@@ -37,6 +38,7 @@ engine = None
 @app.get("/health")
 async def health() -> Response:
     """Health check."""
+    logger.info(f"Health check at {time.time()}")
     return Response(status_code=200)
 
 
