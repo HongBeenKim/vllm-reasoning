@@ -303,7 +303,7 @@ class BlockPool:
     def get_num_cached_blocks(self) -> int:
         num_cached_blocks = sum(
             len(group) for group in 
-            self.cached_block_hash_to_block.values
+            self.cached_block_hash_to_block.values()
         )
         return num_cached_blocks
     
