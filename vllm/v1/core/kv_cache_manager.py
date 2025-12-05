@@ -108,6 +108,10 @@ class KVCacheManager:
             The KV cache usage (between 0.0 and 1.0).
         """
         return self.block_pool.get_usage()
+    
+    @property
+    def prefix_cache_usage(self) -> float:
+        return self.block_pool.get_prefix_cache_usage()
 
     def make_prefix_cache_stats(self) -> Optional[PrefixCacheStats]:
         """Get (and reset) the prefix cache stats.

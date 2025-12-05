@@ -248,6 +248,13 @@ class PrometheusStatLogger(StatLoggerBase):
         self.gauge_kv_cache_usage = make_per_engine(gauge_kv_cache_usage,
                                                     engine_indexes, model_name)
 
+        gauge_prefix_cache_usage = self._gauge_cls(
+            name="vllm:prefix_cache_usage_perc",
+            documentation="Prefix cache usage. 1 means 100 percent usage.",
+            labelnames=labelnames)
+        self.gauge_prefix_cache_usage = make_per_engine(gauge_prefix_cache_usage,
+                                                        engine_indexes, model_name)
+
         counter_prefix_cache_queries = self._counter_cls(
             name="vllm:prefix_cache_queries",
             documentation=(
@@ -502,6 +509,8 @@ class PrometheusStatLogger(StatLoggerBase):
                 scheduler_stats.kv_cache_usage)
             self.gauge_kv_cache_usage[engine_idx].set(
                 scheduler_stats.kv_cache_usage)
+            self.gauge_prefix_cache_usage[engine_idx].set(
+                scheduler_stats.prefix_cache_usage)
 
             self.counter_gpu_prefix_cache_queries[engine_idx].inc(
                 scheduler_stats.prefix_cache_stats.queries)

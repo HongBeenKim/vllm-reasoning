@@ -299,6 +299,16 @@ class BlockPool:
             The KV cache usage (between 0.0 and 1.0).
         """
         return 1.0 - (self.get_num_free_blocks() / self.num_gpu_blocks)
+    
+    def get_num_cached_blocks(self) -> int:
+        num_cached_blocks = sum(
+            len(group) for group in 
+            self.cached_block_hash_to_block.values
+        )
+        return num_cached_blocks
+    
+    def get_prefix_cache_usage(self) -> float:
+        return self.get_num_cached_blocks() / self.num_gpu_blocks
 
     def take_events(self) -> list[KVCacheEvent]:
         """Atomically takes all events and clears the queue.

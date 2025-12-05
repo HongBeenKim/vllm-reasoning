@@ -1058,6 +1058,7 @@ class Scheduler(SchedulerInterface):
             num_running_reqs=len(self.running),
             num_waiting_reqs=len(self.waiting),
             kv_cache_usage=self.kv_cache_manager.usage,
+            prefix_cache_usage=self.kv_cache_manager.prefix_cache_usage,
             prefix_cache_stats=prefix_cache_stats,
             spec_decoding_stats=spec_decoding_stats,
             num_corrupted_reqs=sum(req.is_output_corrupted
