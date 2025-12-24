@@ -2293,8 +2293,6 @@ class GPUModelRunner(
         if self.scheduler_config.enable_chunked_prefill:
             if "token_embed" in supported_tasks:
                 supported_tasks.remove("token_embed")
-            if "token_classify" in supported_tasks:
-                supported_tasks.remove("token_classify")
 
             logger.debug_once(
                 "Chunked prefill is not supported with "
@@ -4213,6 +4211,9 @@ class GPUModelRunner(
         dummy_token_ids = torch.zeros(
             (num_reqs, req_num_tokens), dtype=torch.int32, device=self.device
         )
+        dummpy_num_computed_tokens = torch.zeros(
+            (num_reqs), dtype=torch.int32, device="cpu"
+        )
 
         model = cast(VllmModelForPooling, self.get_model())
         dummy_pooling_params = PoolingParams(task=task)
@@ -4223,6 +4224,7 @@ class GPUModelRunner(
         dummy_metadata = PoolingMetadata(
             prompt_lens=dummy_prompt_lens,
             prompt_token_ids=dummy_token_ids,
+            num_computed_tokens=dummpy_num_computed_tokens,
             pooling_params=[dummy_pooling_params] * num_reqs,
         )
 

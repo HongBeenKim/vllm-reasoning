@@ -81,6 +81,18 @@ def get_prompt_token_ids(pooling_metadata: PoolingMetadata) -> list[torch.Tensor
         for i, num in enumerate(pooling_metadata.prompt_lens)
     ]
 
+def get_extend_token_ids(pooling_metadata: PoolingMetadata):
+    assert pooling_metadata.prompt_token_ids is not None
+    assert pooling_metadata.num_computed_tokens is not None
+
+    return [
+        pooling_metadata.prompt_token_ids[i, begin:num]
+        for i, (begin, num) in enumerate(zip(
+            pooling_metadata.num_computed_tokens, 
+            pooling_metadata.prompt_lens
+        ))
+    ]
+
 
 def get_pooling_params(pooling_metadata: PoolingMetadata) -> list[PoolingParams]:
     pooling_params = pooling_metadata.pooling_params
@@ -216,6 +228,21 @@ class AllPool(PoolingMethod):
             "partial prefill not supported with ALL pooling"
         )
 
+        hidden_states_lst = list(
+            hidden_states.split(pooling_cursor.num_scheduled_tokens_cpu.tolist())
+        )
+        return [hidden_states_lst[i] for i in pooling_cursor.index]
+
+
+class TailPool(PoolingMethod):
+    def get_supported_tasks(self) -> Set[PoolingTask]:
+        return {"token_embed", "token_classify"}
+
+    def forward_all(
+        self,
+        hidden_states: torch.Tensor,
+        pooling_cursor: PoolingCursor,
+    ) -> list[torch.Tensor] | torch.Tensor:
         hidden_states_lst = list(
             hidden_states.split(pooling_cursor.num_scheduled_tokens_cpu.tolist())
         )
@@ -715,7 +742,7 @@ class StepPooler(Pooler):
     def __init__(self, head: nn.Module | PoolerHead) -> None:
         super().__init__()
 
-        self.pooling = AllPool()
+        self.pooling = TailPool()
         self.head = head
 
     def extract_states(
@@ -724,14 +751,14 @@ class StepPooler(Pooler):
         pooling_metadata: PoolingMetadata,
     ) -> torch.Tensor | list[torch.Tensor]:
         pooled_data_lst = self.pooling(hidden_states, pooling_metadata)
-        prompt_token_ids = get_prompt_token_ids(pooling_metadata)
+        extend_token_ids = get_extend_token_ids(pooling_metadata)
 
         pooled_data = list[torch.Tensor]()
 
         pooling_params = get_pooling_params(pooling_metadata)
 
         for data, token_id, pooling_param in zip(
-            pooled_data_lst, prompt_token_ids, pooling_params
+            pooled_data_lst, extend_token_ids, pooling_params
         ):
             step_tag_id = pooling_param.step_tag_id
             returned_token_ids = pooling_param.returned_token_ids
@@ -740,7 +767,7 @@ class StepPooler(Pooler):
                 data = data[:, returned_token_ids]
 
             if step_tag_id is not None:
-                data = data[token_id == step_tag_id]
+                data = data[token_id == step_tag_id][-1:]
             pooled_data.append(data)
 
         return pooled_data

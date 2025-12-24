@@ -129,7 +129,7 @@ class PoolingParams(
             # If prefix caching is enabled,
             # the output of all pooling may less than n_prompt_tokens,
             # we need to skip reading cache at this request.
-            if self.task in ["token_embed", "token_classify"]:
+            if self.task == "token_embed":
                 self.skip_reading_prefix_cache = True
             else:
                 self.skip_reading_prefix_cache = False

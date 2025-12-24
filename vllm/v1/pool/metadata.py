@@ -37,6 +37,7 @@ class PoolingMetadata:
 
     prompt_lens: torch.Tensor  # CPU Tensor
     prompt_token_ids: torch.Tensor | None
+    num_computed_tokens: torch.Tensor  # CPU Tensor
     pooling_params: list[PoolingParams]
     pooling_cursor: PoolingCursor | None = None
 
@@ -47,6 +48,7 @@ class PoolingMetadata:
             if self.prompt_token_ids is None
             else self.prompt_token_ids[indices],
             pooling_params=self.pooling_params[indices],
+            num_computed_tokens=self.num_computed_tokens[indices],
             pooling_cursor=None
             if self.pooling_cursor is None
             else self.pooling_cursor[indices],
