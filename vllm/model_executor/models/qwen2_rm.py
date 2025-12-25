@@ -109,11 +109,33 @@ class Qwen2ForRewardModel(Qwen2RewardBaseModel):
         )
 
 
+class PCATransformer(nn.Module):
+    def __init__(self, in_features: int, out_features: int):
+        super().__init__()
+        
+        self.in_features = in_features
+        self.out_features = out_features
+
+        self.mean = nn.Parameter(
+            torch.empty((1, in_features)), requires_grad=False)
+        self.components = nn.Parameter(
+            torch.empty((out_features, in_features)), requires_grad=False)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x_centered = x - self.mean
+        x_transformed = x_centered @ self.components.T
+        
+        return x_transformed
+
+
 @default_pooling_type("STEP")
 class Qwen2ForProcessRewardModel(Qwen2RewardBaseModel):
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
         vllm_config.model_config.hf_config.num_labels = 2
         super().__init__(vllm_config=vllm_config, prefix=prefix)
+
+        self.pca = PCATransformer(
+            in_features=vllm_config.model_config.get_hidden_size(), out_features=64)
 
         pooler_config = vllm_config.model_config.pooler_config
         assert pooler_config is not None
