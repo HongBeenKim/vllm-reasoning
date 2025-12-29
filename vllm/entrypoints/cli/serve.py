@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+import os
+import debugpy
 import argparse
 import signal
 
@@ -49,6 +51,11 @@ class ServeSubcommand(CLISubcommand):
         # If model is specified in CLI (as positional arg), it takes precedence
         if hasattr(args, "model_tag") and args.model_tag is not None:
             args.model = args.model_tag
+
+        debugger_port = os.getenv("DEBUGGER_PORT")
+        if debugger_port is not None:
+            debugpy.listen(("0.0.0.0", int(debugger_port)))
+            debugpy.wait_for_client()
 
         if args.headless or args.api_server_count < 1:
             run_headless(args)
