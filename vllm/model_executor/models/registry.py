@@ -292,6 +292,7 @@ _REWARD_MODELS = {
     "InternLM2ForRewardModel": ("internlm2", "InternLM2ForRewardModel"),
     "Qwen2ForRewardModel": ("qwen2_rm", "Qwen2ForRewardModel"),
     "Qwen2ForProcessRewardModel": ("qwen2_rm", "Qwen2ForProcessRewardModel"),
+    "Qwen2ForCausalRM": ("qwen2_acecoder_rm", "Qwen2ForCausalRM"),
 }
 
 _TOKEN_CLASSIFICATION_MODELS = {
