@@ -925,6 +925,9 @@ class InputBatch:
             prompt_token_ids_cpu=prompt_token_ids_cpu,
             pooling_params=pooling_params,
             pooling_states=pooling_states,
+            num_computed_tokens=self.num_computed_tokens_cpu_tensor[
+                : self.num_reqs
+            ].clone(),
         )
 
     def _make_prompt_token_ids_cpu_tensor(self) -> torch.Tensor:

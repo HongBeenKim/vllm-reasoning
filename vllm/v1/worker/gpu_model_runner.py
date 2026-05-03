@@ -5731,6 +5731,7 @@ class GPUModelRunner(
             prompt_token_ids_cpu=dummy_token_ids.cpu(),
             pooling_params=[dummy_pooling_params] * num_reqs,
             pooling_states=[PoolingStates() for i in range(num_reqs)],
+            num_computed_tokens=torch.zeros(num_reqs, dtype=torch.int32, device="cpu"),
         )
 
         dummy_metadata.build_pooling_cursor(
