@@ -135,6 +135,16 @@ class PoolingResponse(OpenAIBaseModel):
     model: str
     data: list[PoolingResponseData]
     usage: UsageInfo
+    timing: dict[str, float | None] | None = Field(
+        default=None,
+        description=(
+            "Per-request timing breakdown derived from "
+            "PoolingRequestOutput.metrics. Same shape as the "
+            "ChatCompletionResponse.timing field — for batched "
+            "requests this reports the worst-case per-item timing "
+            "(max queue_time / prefill_time / decode_time)."
+        ),
+    )
 
 
 class PoolingBytesResponse(OpenAIBaseModel):

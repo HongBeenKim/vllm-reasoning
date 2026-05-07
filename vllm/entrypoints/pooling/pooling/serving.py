@@ -12,7 +12,7 @@ from typing_extensions import assert_never
 
 from vllm.entrypoints.openai.engine.protocol import UsageInfo
 from vllm.logger import init_logger
-from vllm.outputs import PoolingRequestOutput
+from vllm.outputs import PoolingRequestOutput, build_timing_dict
 from vllm.tasks import SupportedTask
 from vllm.utils.serial_utils import EmbedDType, Endianness
 
@@ -178,12 +178,38 @@ class ServingPooling(PoolingServingBase):
             total_tokens=num_prompt_tokens,
         )
 
+        # For batched pooling, aggregate per-item timing into the
+        # worst-case (max) of each delta. Useful when a single /pooling
+        # call scores N candidate steps in one shot and we want to
+        # surface the slowest item's queue/prefill/decode times.
+        per_item_timings = [
+            build_timing_dict(getattr(r, "metrics", None))
+            for r in final_res_batch
+        ]
+        per_item_timings = [t for t in per_item_timings if t is not None]
+        timing: dict[str, float | None] | None = None
+        if per_item_timings:
+            def _max(field: str) -> float | None:
+                vals = [t[field] for t in per_item_timings if t.get(field) is not None]
+                return max(vals) if vals else None
+            timing = {
+                "arrival_time": _max("arrival_time"),
+                "queued_ts": _max("queued_ts"),
+                "scheduled_ts": _max("scheduled_ts"),
+                "first_token_ts": _max("first_token_ts"),
+                "last_token_ts": _max("last_token_ts"),
+                "queue_time": _max("queue_time"),
+                "prefill_time": _max("prefill_time"),
+                "decode_time": _max("decode_time"),
+            }
+
         response = PoolingResponse(
             id=request_id,
             created=created_time,
             model=model_name,
             data=items,
             usage=usage,
+            timing=timing,
         )
         return self.json_response_cls(content=response.model_dump())
 

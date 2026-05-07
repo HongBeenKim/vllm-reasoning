@@ -110,6 +110,16 @@ class ChatCompletionResponse(OpenAIBaseModel):
     kv_transfer_params: dict[str, Any] | None = Field(
         default=None, description="KVTransfer parameters."
     )
+    timing: dict[str, float | None] | None = Field(
+        default=None,
+        description=(
+            "Per-request timing breakdown derived from "
+            "RequestOutput.metrics. Keys: arrival_time, queued_ts, "
+            "scheduled_ts, first_token_ts, last_token_ts, queue_time "
+            "(scheduled_ts − queued_ts), prefill_time (first_token_ts − "
+            "scheduled_ts), decode_time (last_token_ts − first_token_ts)."
+        ),
+    )
 
 
 class ChatCompletionResponseStreamChoice(OpenAIBaseModel):

@@ -220,12 +220,48 @@ class PoolingRequestOutput(Generic[_O]):
         prompt_token_ids: list[int],
         num_cached_tokens: int,
         finished: bool,
+        metrics: "RequestStateStats | None" = None,
     ):
         self.request_id = request_id
         self.prompt_token_ids = prompt_token_ids
         self.num_cached_tokens = num_cached_tokens
         self.finished = finished
         self.outputs = outputs
+        self.metrics = metrics
+
+
+def build_timing_dict(metrics: Any) -> dict[str, float | None] | None:
+    """Surface per-request timing from RequestStateStats so callers can
+    distinguish queueing from prefill/decode without timing locally.
+
+    Shared between chat-completion and pooling response builders. Keys:
+    arrival_time (engine-frontend wall-clock), queued_ts / scheduled_ts
+    / first_token_ts / last_token_ts (engine-core monotonic), and the
+    derived deltas queue_time / prefill_time / decode_time. Each delta
+    is None when its endpoints are not both populated."""
+    if metrics is None:
+        return None
+
+    def _delta(end: float | None, start: float | None) -> float | None:
+        if not end or not start or end < start:
+            return None
+        return end - start
+
+    queued_ts = getattr(metrics, "queued_ts", None) or None
+    scheduled_ts = getattr(metrics, "scheduled_ts", None) or None
+    first_token_ts = getattr(metrics, "first_token_ts", None) or None
+    last_token_ts = getattr(metrics, "last_token_ts", None) or None
+
+    return {
+        "arrival_time": getattr(metrics, "arrival_time", None),
+        "queued_ts": queued_ts,
+        "scheduled_ts": scheduled_ts,
+        "first_token_ts": first_token_ts,
+        "last_token_ts": last_token_ts,
+        "queue_time": _delta(scheduled_ts, queued_ts),
+        "prefill_time": _delta(first_token_ts, scheduled_ts),
+        "decode_time": _delta(last_token_ts, first_token_ts),
+    }
 
     def __repr__(self):
         return (
